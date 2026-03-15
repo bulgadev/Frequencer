@@ -20,23 +20,28 @@ func main() {
 	var name string
 
 	errorText := widget.NewLabel("")
-	tempWarn := widget.NewLabel(fmt.Sprintf("This is the first stable application version. %s The actual sound system is not implemented yet. %s So if you came for the code, its fine, but the app is not ready yet.", "\n", "\n"))
+	//tempWarn := widget.NewLabel(fmt.Sprintf("This is the first stable application version. %s The actual sound system is not implemented yet. %s So if you came for the code, its fine, but the app is not ready yet.", "\n", "\n"))
 
 	infoText := widget.NewLabel("")
 	infoText.Wrapping = fyne.TextWrapWord
 
+	///
 	//Add a drop-down with the preset type (frequency by default)
+	///
 	presetDropdown := widget.NewSelect([]string{"None"}, func(value string) {
 		//Logic to select preset from JSON map later
 		name = value
 	})
 
-	//Get info from cache
+	///
+	//Get from cache, and run it
+	///
 	testButton := widget.NewButton("Run", func() {
 		if name != "None" && name != "" {
 			info, _ := utils.GetCached(name)
 			textQuery := fmt.Sprintf("Name: %s\nDescription: %s\nFrequencies: %s\nType: %s", name, info.Description, info.Frequencies, info.Type)
 			infoText.SetText(textQuery)
+			utils.RunAudio(info.Frequencies)
 			errorText.Hide()
 		} else {
 			errorText.Show()
@@ -44,11 +49,14 @@ func main() {
 		}
 	})
 
+	///
 	//Add a button to add new preset
+	///
 	addPresetButton := fyne.NewMenuItem("Add Preset", func() {
 		addPreset.AddPresetWindow(presetDropdown)
 	})
 
+	//Load presets from json
 	utils.LoadPresets(presetDropdown)
 
 	mainLayout := container.NewVBox(
@@ -65,7 +73,7 @@ func main() {
 		container.NewVBox(
 			mainLayout,
 			infoText,
-			tempWarn,
+			//tempWarn,
 			errorText,
 		),
 	)
@@ -78,13 +86,3 @@ func main() {
 	w.Resize(fyne.NewSize(500, 150))
 	w.ShowAndRun()
 }
-
-//Then, on the main menu, add a drop-down with all presets. To add it just loop at the json, and take each dic name
-
-//Then a start button
-
-//When the start button is clicked, it will have to call some audio framework which will be able to generate this frequencies.
-
-//You will take the selected preset from the drop-down, and search for it on the json (maybe a loop? Idk what's the most efficient way to look up a json, I have to search first)
-
-//Then take each necessary variable from the json, pass it to the audio lib, and run it.
