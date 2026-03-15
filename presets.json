@@ -1,7 +1,27 @@
 {
- "piripi": {
-  "Description": "chibau",
-  "Frequencies": "234",
+ "Crazy": {
+  "Description": "htr",
+  "Frequencies": "18",
+  "Type": "Default (Frequency)"
+ },
+ "ds": {
+  "Description": "fgsd",
+  "Frequencies": "gfd",
+  "Type": "Default (Frequency)"
+ },
+ "esffes": {
+  "Description": "greg",
+  "Frequencies": "32",
+  "Type": "Default (Frequency)"
+ },
+ "tyhun": {
+  "Description": "34",
+  "Frequencies": "fee",
+  "Type": "Default (Frequency)"
+ },
+ "wow": {
+  "Description": "yeah",
+  "Frequencies": "34",
   "Type": "Default (Frequency)"
  }
 }

@@ -1,8 +1,7 @@
 package addPreset
 
 import (
-	"encoding/json"
-	"os"
+	utils "Frequencer/pkg/utils"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -11,7 +10,7 @@ import (
 
 //This function is made entirely for the preset window.
 
-func AddPresetWindow() {
+func AddPresetWindow(presetDropdown *widget.Select) {
 	//Add preset window
 	var presetWindow fyne.Window = fyne.CurrentApp().NewWindow("Add Preset")
 
@@ -39,19 +38,22 @@ func AddPresetWindow() {
 		frequencies := presetFrequenciesInput.Text
 
 		//Save type, asked inputs and name on a json, each on a different dictionarie defined by the preset name.
-		m := map[string]interface{}{
-			title: map[string]interface{}{
-				"Type":        presetTypeDropdown.Selected,
-				"Description": desc,
-				"Frequencies": frequencies,
-			},
+		preset := map[string]interface{}{
+			"Type":        presetTypeDropdown.Selected,
+			"Description": desc,
+			"Frequencies": frequencies,
 		}
 
-		//Save preset to json
-		file, _ := json.MarshalIndent(m, "", " ")
-		_ = os.WriteFile("presets.json", file, 0644)
+		//Save preset to json (appends to existing presets)
+		_ = utils.SavePreset(title, preset)
 		presetWindow.Close()
 
+		//Clear cache and dropdown
+		utils.ClearCache()
+		utils.CleanPresets(presetDropdown)
+
+		//Add the preset to the dropdown
+		utils.LoadPresets(presetDropdown)
 	})
 
 	//Add a cancel button
