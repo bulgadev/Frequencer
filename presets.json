@@ -1,12 +1,12 @@
 {
- "Banana": {
-  "Description": "focus audio",
-  "Frequencies": "32",
-  "Type": "Default (Frequency)"
- },
- "Yeahbro": {
-  "Description": "ogi",
-  "Frequencies": "12",
-  "Type": "Default (Frequency)"
- }
+  "Banana": {
+    "Description": "focus audio",
+    "Frequencies": "32",
+    "Type": "Default (Frequency)"
+  },
+  "Yeahbro": {
+    "Description": "ogi",
+    "Frequencies": "12",
+    "Type": "Default (Frequency)"
+  }
 }
