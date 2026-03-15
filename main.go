@@ -2,43 +2,14 @@ package main
 
 import (
 	addPreset "Frequencer/pkg"
-	"Frequencer/pkg/models"
 	utils "Frequencer/pkg/utils"
-	"encoding/json"
 	"fmt"
-	"log"
-	"os"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
-
-func loadPresets(presetDropdown *widget.Select) {
-
-	jsonData, err := os.ReadFile("presets.json")
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var result map[string]models.Presets
-
-	err = json.Unmarshal(jsonData, &result)
-	if err != nil {
-		fmt.Println("error:", err)
-	}
-
-	for name, content := range result {
-		//Add the name to the drop-down
-		presetDropdown.Options = append(presetDropdown.Options, name)
-
-		//Cache the preset
-		utils.CacheIt(name, content)
-	}
-
-}
 
 // open a new window (at min 800x600, name frequenced
 func main() {
@@ -48,13 +19,10 @@ func main() {
 
 	var name string
 
-	//Add a button to add new preset
-	addPresetButton := fyne.NewMenuItem("Add Preset", addPreset.AddPresetWindow)
-	testButton := widget.NewButton("Get Cached", func() {
-		info, _ := utils.GetCached(name)
-		fmt.Println(info.Frequencies)
+	errorText := widget.NewLabel("")
 
-	})
+	infoText := widget.NewLabel("")
+	infoText.Wrapping = fyne.TextWrapWord
 
 	//Add a drop-down with the preset type (frequency by default)
 	presetDropdown := widget.NewSelect([]string{"None"}, func(value string) {
@@ -62,7 +30,25 @@ func main() {
 		name = value
 	})
 
-	loadPresets(presetDropdown)
+	//Get info from cache
+	testButton := widget.NewButton("Run", func() {
+		if name != "None" && name != "" {
+			info, _ := utils.GetCached(name)
+			textQuery := fmt.Sprintf("Name: %s\nDescription: %s\nFrequencies: %s\nType: %s", name, info.Description, info.Frequencies, info.Type)
+			infoText.SetText(textQuery)
+			errorText.Hide()
+		} else {
+			errorText.Show()
+			errorText.SetText("No preset selected")
+		}
+	})
+
+	//Add a button to add new preset
+	addPresetButton := fyne.NewMenuItem("Add Preset", func() {
+		addPreset.AddPresetWindow(presetDropdown)
+	})
+
+	utils.LoadPresets(presetDropdown)
 
 	mainLayout := container.NewVBox(
 		presetDropdown,
@@ -77,8 +63,15 @@ func main() {
 	w.SetContent(
 		container.NewVBox(
 			mainLayout,
+			infoText,
+			errorText,
 		),
 	)
+
+	w.SetOnClosed(func() {
+		utils.ClearCache()
+		utils.CleanPresets(presetDropdown)
+	})
 
 	w.Resize(fyne.NewSize(500, 300))
 	w.ShowAndRun()
