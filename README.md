@@ -55,7 +55,7 @@ Frequencer is a sleek, Go-powered desktop application designed to help you reach
 
 Frequencer is based on the concept of auditory stimulation for cognitive enhancement. By providing consistent, specific frequencies, the app aims to help synchronize brainwaves to states associated with deep work and heightened attention.
 
-##Developer Notes
+## Developer Notes
 
 That was my first interaction with Go on my life. So I made this app the most stupidly fast, and well made way I could, having on mind thats my first line of code using go. My respect for all go coders. That was not as easy as people say it is.
 
