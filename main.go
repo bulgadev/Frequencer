@@ -20,6 +20,7 @@ func main() {
 	var name string
 
 	errorText := widget.NewLabel("")
+	tempWarn := widget.NewLabel(fmt.Sprintf("This is the first stable application version. %s The actual sound system is not implemented yet. %s So if you came for the code, its fine, but the app is not ready yet.", "\n", "\n"))
 
 	infoText := widget.NewLabel("")
 	infoText.Wrapping = fyne.TextWrapWord
@@ -64,6 +65,7 @@ func main() {
 		container.NewVBox(
 			mainLayout,
 			infoText,
+			tempWarn,
 			errorText,
 		),
 	)
@@ -73,7 +75,7 @@ func main() {
 		utils.CleanPresets(presetDropdown)
 	})
 
-	w.Resize(fyne.NewSize(500, 300))
+	w.Resize(fyne.NewSize(500, 150))
 	w.ShowAndRun()
 }
 
