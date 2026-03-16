@@ -41,7 +41,7 @@ func main() {
 			info, _ := utils.GetCached(name)
 			textQuery := fmt.Sprintf("Name: %s\nDescription: %s\nFrequencies: %s\nType: %s", name, info.Description, info.Frequencies, info.Type)
 			infoText.SetText(textQuery)
-			utils.RunAudio(info.Frequencies)
+			utils.RunAudio(info.Frequencies, info.Type)
 			errorText.Hide()
 		} else {
 			errorText.Show()

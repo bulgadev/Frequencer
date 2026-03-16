@@ -15,7 +15,8 @@ func AddPresetWindow(presetDropdown *widget.Select) {
 	var presetWindow fyne.Window = fyne.CurrentApp().NewWindow("Add Preset")
 
 	//Add a drop-down with the preset type (frequency by default)
-	presetTypeDropdown := widget.NewSelect([]string{"Default (Frequency)"}, func(value string) {
+	// Wave type options — must match keys in waveModules (runAudio.go)
+	presetTypeDropdown := widget.NewSelect([]string{"Default (Frequency)", "Binaural Beats"}, func(value string) {
 		// Logic to select preset from JSON map later
 	})
 
