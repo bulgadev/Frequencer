@@ -1,18 +1,40 @@
 package utils
 
 import (
+	"Frequencer/pkg/models"
 	"encoding/binary"
 	"io"
 	"math"
 	"strconv"
+	"sync"
 
 	"github.com/ebitengine/oto/v3"
 )
 
+var (
+	otoCtx   *oto.Context
+	otoReady chan struct{}
+	otoOnce  sync.Once
+)
+
+func initOtoContext() {
+	op := &oto.NewContextOptions{}
+	op.Format = oto.FormatSignedInt16LE
+	op.SampleRate = 44100
+	op.ChannelCount = 2
+	op.BufferSize = 2048
+
+	var err error
+	otoCtx, otoReady, err = oto.NewContext(op)
+	if err != nil {
+		panic(err)
+	}
+}
+
 // --- Wave type module registry ---
 // Maps wave type names (from presets) to their builder functions.
 // Each builder returns an io.Reader that generates audio samples.
-var waveModules = map[string]func(sampleRate int, freq float64) io.Reader{
+var waveModules = map[string]func(sampleRate int, info models.Presets) io.Reader{
 	"Default (Frequency)": buildSineWave,
 	"Binaural Beats":      buildBinauralBeat,
 }
@@ -46,7 +68,12 @@ func (s *SineWave) Read(p []byte) (n int, err error) {
 }
 
 // buildSineWave - builder for the default single sine wave module
-func buildSineWave(sampleRate int, freq float64) io.Reader {
+func buildSineWave(sampleRate int, info models.Presets) io.Reader {
+	freq, err := strconv.ParseFloat(info.Frequencies, 64)
+	if err != nil {
+		return nil
+	}
+
 	return &SineWave{
 		sampleRate: sampleRate,
 		freq:       freq,
@@ -71,26 +98,52 @@ type BinauralBeat struct {
 	phaseR     float64 // GHOST: right channel phase accumulator
 }
 
-// Read — TODO: implement binaural beat sample generation here
+// Read — Generates Left channel at baseFreq, Right channel at baseFreq + beatFreq
 func (b *BinauralBeat) Read(p []byte) (n int, err error) {
-	// TODO: generate left channel at baseFreq, right channel at baseFreq + beatFreq
-	// Use phaseL / phaseR accumulators similarly to SineWave.Read
 	for i := 0; i < len(p)/4; i++ {
-		binary.LittleEndian.PutUint16(p[i*4:], 0)
-		binary.LittleEndian.PutUint16(p[i*4+2:], 0)
+		// Left channel gets the base frequency
+		vL := math.Sin(b.phaseL * 2 * math.Pi)
+		b.phaseL += b.baseFreq / float64(b.sampleRate)
+		if b.phaseL > 1 {
+			b.phaseL -= 1
+		}
+
+		// Right channel gets the base + beat frequency
+		vR := math.Sin(b.phaseR * 2 * math.Pi)
+		b.phaseR += (b.baseFreq + b.beatFreq) / float64(b.sampleRate)
+		if b.phaseR > 1 {
+			b.phaseR -= 1
+		}
+
+		// Scale volume
+		sampleL := int16(vL * 0.3 * 32767)
+		sampleR := int16(vR * 0.3 * 32767)
+
+		binary.LittleEndian.PutUint16(p[i*4:], uint16(sampleL))
+		binary.LittleEndian.PutUint16(p[i*4+2:], uint16(sampleR))
 	}
 	return len(p), nil
 }
 
 // buildBinauralBeat - builder for the binaural beats module
-// GHOST: freq is currently used as baseFreq; beatFreq needs to come from the preset
-// When implementing, you'll need to parse/split the frequencies string
-// in RunAudio or pass a second freq value from the preset.
-func buildBinauralBeat(sampleRate int, freq float64) io.Reader {
+func buildBinauralBeat(sampleRate int, info models.Presets) io.Reader {
+	// Try parsing Left frequency or fallback to Frequencies string
+	freqStr := info.FrequencieLeft
+	if freqStr == "" {
+		freqStr = info.Frequencies
+	}
+	baseFreq, err := strconv.ParseFloat(freqStr, 64)
+	if err != nil {
+		return nil
+	}
+
+	// Try extracting Delta parameter for beat difference
+	beatFreq, _ := strconv.ParseFloat(info.Delta, 64)
+
 	return &BinauralBeat{
 		sampleRate: sampleRate,
-		baseFreq:   freq, // GHOST: replace with actual base frequency from preset
-		beatFreq:   0,    // GHOST: set this from the preset's beat frequency value
+		baseFreq:   baseFreq,
+		beatFreq:   beatFreq,
 		phaseL:     0,
 		phaseR:     0,
 	}
@@ -99,33 +152,23 @@ func buildBinauralBeat(sampleRate int, freq float64) io.Reader {
 // ========== RunAudio — module dispatcher ==========
 
 // RunAudio plays audio using the wave module matching waveType.
-// Added waveType param for module dispatch (was previously single-arg).
-func RunAudio(freqStr string, waveType string) {
-	freq, err := strconv.ParseFloat(freqStr, 64)
-	if err != nil {
-		return
-	}
-
-	op := &oto.NewContextOptions{}
-	op.Format = oto.FormatSignedInt16LE
-	op.SampleRate = 44100
-	op.ChannelCount = 2
-	op.BufferSize = 2048
-
-	ctx, ready, err := oto.NewContext(op)
-	if err != nil {
-		panic(err)
-	}
-	<-ready // wait until context is ready
+// Refactored to accept the whole preset struct to dispatch dynamic variables.
+func RunAudio(info models.Presets) {
+	// Init context only once across the application lifecycle
+	otoOnce.Do(initOtoContext)
+	<-otoReady // wait until context is ready
 
 	// Look up the wave module by type, fall back to default
-	builder, ok := waveModules[waveType]
+	builder, ok := waveModules[info.Type]
 	if !ok {
 		builder = waveModules["Default (Frequency)"]
 	}
 
-	wave := builder(op.SampleRate, freq)
+	wave := builder(44100, info)
+	if wave == nil {
+		return // Failed to parse basic freq params in builder
+	}
 
-	player := ctx.NewPlayer(wave)
+	player := otoCtx.NewPlayer(wave)
 	player.Play()
 }

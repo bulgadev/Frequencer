@@ -1,12 +1,36 @@
 {
-  "Banana": {
-    "Description": "focus audio",
-    "Frequencies": "32",
-    "Type": "Default (Frequency)"
-  },
-  "Yeahbro": {
-    "Description": "ogi",
-    "Frequencies": "12",
-    "Type": "Default (Frequency)"
-  }
+ " anfvn": {
+  "Delta": "45",
+  "Desc": "wdwad",
+  "FrequencieLeft": "54",
+  "FrequencieRight": "78",
+  "Name": " anfvn",
+  "Type": "Binaural Beats"
+ },
+ "Banana": {
+  "Description": "focus audio",
+  "Frequencies": "32",
+  "Type": "Default (Frequency)"
+ },
+ "Bineuraltest": {
+  "Delta": "2",
+  "Desc": "adwa",
+  "FrequencieLeft": "12",
+  "FrequencieRight": "45",
+  "Name": "Bineuraltest",
+  "Type": "Binaural Beats"
+ },
+ "Yeahbro": {
+  "Description": "ogi",
+  "Frequencies": "12",
+  "Type": "Default (Frequency)"
+ },
+ "thgnf": {
+  "Delta": "23",
+  "Desc": "hjtyh",
+  "FrequencieLeft": "34",
+  "FrequencieRight": "65",
+  "Name": "thgnf",
+  "Type": "Binaural Beats"
+ }
 }

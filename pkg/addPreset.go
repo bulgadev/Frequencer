@@ -2,71 +2,126 @@ package addPreset
 
 import (
 	utils "Frequencer/pkg/utils"
+	"fmt"
+	"reflect"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
 
-//This function is made entirely for the preset window.
+type Single_wave struct {
+	Name string
 
-func AddPresetWindow(presetDropdown *widget.Select) {
-	//Add preset window
-	var presetWindow fyne.Window = fyne.CurrentApp().NewWindow("Add Preset")
+	Desc string
 
-	//Add a drop-down with the preset type (frequency by default)
-	// Wave type options — must match keys in waveModules (runAudio.go)
-	presetTypeDropdown := widget.NewSelect([]string{"Default (Frequency)", "Binaural Beats"}, func(value string) {
-		// Logic to select preset from JSON map later
-	})
+	Frequencie int
+}
 
-	//Add a input for the preset name
-	presetNameInput := widget.NewEntry()
-	presetNameInput.SetPlaceHolder("Preset Name")
+type Bineural_beats struct {
+	Name string
 
-	//Add a input for the preset description
-	presetDescInput := widget.NewEntry()
-	presetDescInput.SetPlaceHolder("Preset Description")
+	Desc string
 
-	//Add a input for the preset frequencies
-	presetFrequenciesInput := widget.NewEntry()
-	presetFrequenciesInput.SetPlaceHolder("Preset Frequencies")
+	FrequencieLeft int
 
-	//Add a ok button
-	presetOkButton := widget.NewButton("OK", func() {
-		title := presetNameInput.Text
-		desc := presetDescInput.Text
-		frequencies := presetFrequenciesInput.Text
+	FrequencieRight int
 
-		//Save type, asked inputs and name on a json, each on a different dictionarie defined by the preset name.
-		preset := map[string]interface{}{
-			"Type":        presetTypeDropdown.Selected,
-			"Description": desc,
-			"Frequencies": frequencies,
+	Delta int
+}
+
+func generateFormFromStruct(data interface{}, entryMap map[string]*widget.Entry) *widget.Form {
+	form := widget.NewForm()
+
+	v := reflect.ValueOf(data)
+	if !v.IsValid() {
+		return form
+	}
+
+	if v.Kind() == reflect.Pointer {
+		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		return form
+	}
+
+	t := v.Type()
+	for i := 0; i < v.NumField(); i++ {
+		fieldVal := v.Field(i)
+		fieldType := t.Field(i)
+
+		if fieldType.PkgPath != "" {
+			continue
 		}
 
-		//Save preset to json (appends to existing presets)
+		label := fieldType.Name
+
+		switch fieldVal.Kind() {
+		case reflect.String:
+			entry := widget.NewEntry()
+			entry.SetText(fmt.Sprintf("%v", fieldVal.Interface()))
+			entryMap[label] = entry
+			form.Append(label, entry)
+		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			entry := widget.NewEntry()
+			entry.SetText(fmt.Sprintf("%d", fieldVal.Int()))
+			entryMap[label] = entry
+			form.Append(label, entry)
+		default:
+			entry := widget.NewEntry()
+			entry.Disable()
+			form.Append(label, entry)
+		}
+	}
+
+	return form
+}
+
+func AddPresetWindow(presetDropdown *widget.Select) {
+	var presetWindow fyne.Window = fyne.CurrentApp().NewWindow("Add Preset")
+
+	dynamicFields := container.NewVBox()
+	entryMap := make(map[string]*widget.Entry)
+
+	presetTypeDropdown := widget.NewSelect([]string{"Default (Frequency)", "Binaural Beats"}, func(value string) {
+		dynamicFields.Objects = nil
+		entryMap = make(map[string]*widget.Entry)
+		switch value {
+		case "Binaural Beats":
+			dynamicFields.Add(generateFormFromStruct(Bineural_beats{}, entryMap))
+		default:
+			dynamicFields.Add(generateFormFromStruct(Single_wave{}, entryMap))
+		}
+		dynamicFields.Refresh()
+	})
+
+	presetOkButton := widget.NewButton("OK", func() {
+		preset := map[string]interface{}{
+			"Type": presetTypeDropdown.Selected,
+		}
+
+		for fieldName, entry := range entryMap {
+			preset[fieldName] = entry.Text
+		}
+
+		title := entryMap["Name"].Text
+
 		_ = utils.SavePreset(title, preset)
 		presetWindow.Close()
 
-		//Clear cache and dropdown
 		utils.ClearCache()
 		utils.CleanPresets(presetDropdown)
 
-		//Add the preset to the dropdown
 		utils.LoadPresets(presetDropdown)
 	})
 
-	//Add a cancel button
 	presetCancelButton := widget.NewButton("Cancel", func() {
 		presetWindow.Close()
 	})
 
 	presetLayout := container.NewVBox(
 		presetTypeDropdown,
-		presetNameInput,
-		presetDescInput,
-		presetFrequenciesInput,
+		dynamicFields,
 		container.NewHBox(presetOkButton, presetCancelButton),
 	)
 

@@ -41,7 +41,8 @@ func main() {
 			info, _ := utils.GetCached(name)
 			textQuery := fmt.Sprintf("Name: %s\nDescription: %s\nFrequencies: %s\nType: %s", name, info.Description, info.Frequencies, info.Type)
 			infoText.SetText(textQuery)
-			utils.RunAudio(info.Frequencies, info.Type)
+			// Refactored to pass the entire struct for dynamic parameter fetching
+			utils.RunAudio(info)
 			errorText.Hide()
 		} else {
 			errorText.Show()
