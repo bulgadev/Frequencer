@@ -3,7 +3,6 @@ package main
 import (
 	addPreset "Frequencer/pkg"
 	utils "Frequencer/pkg/utils"
-	"fmt"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -39,14 +38,14 @@ func main() {
 	testButton := widget.NewButton("Run", func() {
 		if name != "None" && name != "" {
 			info, _ := utils.GetCached(name)
-			textQuery := fmt.Sprintf("Name: %s\nDescription: %s\nFrequencies: %s\nType: %s", name, info.Description, info.Frequencies, info.Type)
-			infoText.SetText(textQuery)
+			infoText.SetText(info.Summary())
 			// Refactored to pass the entire struct for dynamic parameter fetching
 			utils.RunAudio(info)
 			errorText.Hide()
 		} else {
 			errorText.Show()
-			errorText.SetText("No preset selected")
+			utils.PauseAudio()
+			errorText.SetText("No preset selected, will pause the active player")
 		}
 	})
 

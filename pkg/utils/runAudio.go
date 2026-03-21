@@ -12,9 +12,11 @@ import (
 )
 
 var (
-	otoCtx   *oto.Context
-	otoReady chan struct{}
-	otoOnce  sync.Once
+	otoCtx       *oto.Context
+	otoReady     chan struct{}
+	otoOnce      sync.Once
+	activePlayer *oto.Player
+	playerMu     sync.Mutex
 )
 
 func initOtoContext() {
@@ -169,6 +171,25 @@ func RunAudio(info models.Presets) {
 		return // Failed to parse basic freq params in builder
 	}
 
-	player := otoCtx.NewPlayer(wave)
-	player.Play()
+	// Lock to safely handle the active player
+	playerMu.Lock()
+	defer playerMu.Unlock()
+
+	// If a player is already running, pause it to prevent overlapping frequencies
+	if activePlayer != nil {
+		activePlayer.Pause()
+	}
+
+	activePlayer = otoCtx.NewPlayer(wave)
+	activePlayer.Play()
+}
+
+// Pause the audio
+func PauseAudio() {
+	playerMu.Lock()
+	defer playerMu.Unlock()
+
+	if activePlayer != nil {
+		activePlayer.Pause()
+	}
 }
