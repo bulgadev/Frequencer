@@ -14,7 +14,14 @@ import (
 func main() {
 
 	a := app.New()
-	w := a.NewWindow("Hello")
+	w := a.NewWindow("Frequencer")
+
+	// Set application icon
+	icon, err := fyne.LoadResourceFromPath("icon.png")
+	if err == nil {
+		a.SetIcon(icon)
+		w.SetIcon(icon)
+	}
 
 	var name string
 
